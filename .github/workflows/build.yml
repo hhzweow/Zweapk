@@ -1,9 +1,6 @@
 name: Build APK
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'zweetools.zip'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,9 +13,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
-      - run: unzip -q zweetools.zip -d proj
-      - run: cd proj && gradle assembleDebug --no-daemon
+          cache-disabled: true
+      - name: Unpack
+        run: |
+          ls -la
+          unzip -o -q *.zip -d proj
+          find proj -maxdepth 3 | head -50
+      - name: Build
+        run: |
+          D=$(dirname "$(find proj -name settings.gradle.kts | head -1)")
+          echo "Project dir: $D"
+          cd "$D"
+          gradle assembleDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: ZweTOOLS-apk
-          path: proj/app/build/outputs/apk/debug/app-debug.apk
+          path: proj/**/app-debug.apk
